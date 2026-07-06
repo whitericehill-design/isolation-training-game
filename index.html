@@ -647,16 +647,6 @@ function buildCorridor(){
     wi.style.left=(180+i*460)+'px';w.appendChild(wi);
   }
 
-  DOORS.forEach((d,i)=>{
-    const l=100+i*DS;
-    const g=document.createElement('div');
-    g.className='door-group';g.id='dr'+i;g.style.left=l+'px';g.style.pointerEvents='none';
-    const fr=document.createElement('div');fr.className='door-frame';
-    fr.innerHTML=`<span class="door-icon">${d.icon}</span><div class="door-handle"></div>`;
-    const lb=document.createElement('div');lb.className='door-label';
-    lb.innerHTML=`${i+1}. ${d.label}`;
-    g.appendChild(fr);g.appendChild(lb);w.appendChild(g);
-  });
 
   const np=document.createElement('div');np.className='npc';np.id='npc';np.style.left='28px';
   np.innerHTML='<div class="nhead">👩‍⚕️</div><div class="nbody"></div>';
