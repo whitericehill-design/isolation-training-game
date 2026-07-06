@@ -284,7 +284,7 @@
     <div class="room-header">
       <span style="font-size:10px;color:var(--sub)" id="roomBadge"></span>
       <span style="font-size:14px;font-weight:700;color:var(--text)" id="roomTit"></span>
-      <span style="cursor:pointer;font-size:16px" onclick="closeRoom()">✕</span>
+      <span style="cursor:pointer;font-size:16px" onclick="document.getElementById('roomOv').classList.remove('active')">✕</span>
     </div>
     <div class="room-body">
       <div class="r-patient" id="rPat" style="display:none"></div>
@@ -340,7 +340,7 @@ const ST={
   prologue:{p:null,cast:['王老师'],d:[
     {s:'王老师',t:'{name}，欢迎来到感染科实习。走廊上有七扇门——每一扇后面都是一个你必须面对的临床场景。'},
     {s:'王老师',t:'记住两件事：<b>保护患者不受感染</b>，和<b>保护自己不被暴露</b>。'},
-  ],ch:[{t:'我准备好了！',ok:true,sc:0,nx:null}]},
+  ],ch:[{t:'我准备好了！',ok:true,sc:0,nx:'scene1'}]},
 
   scene1:{p:{n:'病区环境',tp:37.0,hr:80,sp:98,cd:'你的双手是病原体最常见的传播媒介'},cast:['王老师'],d:[
     {s:'王老师',t:'病房里住着术后患者、化疗患者——免疫系统很脆弱。你手上看不见的细菌，对他们可能是致命的。'},
@@ -433,108 +433,6 @@ const sh=(a)=>{const r=[...a];for(let i=r.length-1;i>0;i--){const j=Math.floor(M
 // ═══════════════════════════════════════
 //  走廊
 // ═══════════════════════════════════════
-function buildCorridor(){
-  const w=document.getElementById('wallZ');
-  const f=document.getElementById('floorZ');
-  const corr=document.getElementById('corr');
-  corr.style.width=CW+'px';
-
-  // 窗户
-  for(let i=0;i<4;i++){
-    const wi=document.createElement('div');wi.className='win';
-    wi.style.left=(180+i*460)+'px';w.appendChild(wi);
-  }
-
-  // 门
-  DOORS.forEach((d,i)=>{
-    const l=100+i*DS;
-    const g=document.createElement('div');
-    g.className='door-group locked';g.id='dr'+i;g.style.left=l+'px';
-    g.setAttribute('data-i',i);g.onclick=()=>enterDoor(i);
-
-    const fr=document.createElement('div');fr.className='door-frame';
-    fr.innerHTML=`<span class="door-icon">${d.icon}</span><div class="door-handle"></div>`;
-
-    const lb=document.createElement('div');lb.className='door-label';
-    lb.innerHTML=`${i+1}. ${d.label}`;
-
-    g.appendChild(fr);g.appendChild(lb);w.appendChild(g);
-  });
-
-  // 护士
-  const np=document.createElement('div');np.className='npc';np.id='npc';np.style.left='28px';
-  np.innerHTML='<div class="nhead">👩‍⚕️</div><div class="nbody"></div>';
-  w.appendChild(np);
-
-  // 角色
-  const ch=document.createElement('div');ch.className='char';ch.id='ch';ch.style.left='28px';
-  ch.innerHTML='<div class="head">🧑‍⚕️</div><div class="body"></div>';
-  w.appendChild(ch);
-
-  // 地板格
-  for(let x=0;x<CW;x+=70){
-    const t=document.createElement('div');
-    t.style.cssText=`position:absolute;left:${x}px;top:18px;width:68px;height:34px;border:1px solid rgba(0,0,0,.04);`;
-    f.appendChild(t);
-  }
-}
-
-// ═══════════════════════════════════════
-//  行走
-// ═══════════════════════════════════════
-function walkTo(tx,cb){
-  const ch=document.getElementById('ch');
-  ch.classList.add('walking');ch.style.left=tx+'px';
-  const vp=document.getElementById('vp');
-  vp.scrollTo({left:Math.max(0,tx-vp.clientWidth/2),behavior:'smooth'});
-  setTimeout(()=>{ch.classList.remove('walking');if(cb)cb();},700);
-}
-
-// ═══════════════════════════════════════
-//  门
-// ═══════════════════════════════════════
-function enterDoor(i){
-  if(i>curD+1)return;
-  const tx=100+i*DS+33;
-  walkTo(tx,()=>{
-    if(i===curD+1){curD=i;document.getElementById('dr'+i).classList.remove('locked');}
-    openRoom(DOORS[i].id);updateDrs();
-  });
-}
-
-function openRoom(sid){
-  const sc=gs(sid);if(!sc)return;
-  curR=sc;ans=false;curP=null;
-  document.getElementById('roomOv').classList.add('active');
-  document.getElementById('tip').style.display='none';
-
-  const di=DOORS.findIndex(d=>d.id===sid);
-  document.getElementById('roomBadge').textContent=di>=0?`房间 ${di+1}/07`:'';
-  document.getElementById('roomTit').textContent=di>=0?DOORS[di].label:'';
-  document.getElementById('rCh').innerHTML='';
-  document.getElementById('rFb').classList.remove('show','ok','err');document.getElementById('rFb').innerHTML='';
-  document.getElementById('rBtn').classList.remove('show');
-
-  if(sc.p){
-    curP=JSON.parse(JSON.stringify(sc.p));
-    document.getElementById('rPat').style.display='flex';
-    document.getElementById('rPat').innerHTML=`
-      <span style="font-weight:700;font-size:11px;min-width:70px">🩺 ${curP.n}</span>
-      <div style="text-align:center"><div style="font-size:14px;font-weight:700">${curP.tp.toFixed(1)}°C</div><div style="font-size:8px;color:var(--sub)">体温</div></div>
-      <div style="text-align:center"><div style="font-size:14px;font-weight:700">${curP.hr}</div><div style="font-size:8px;color:var(--sub)">心率</div></div>
-      <div style="text-align:center"><div style="font-size:14px;font-weight:700">${curP.sp}%</div><div style="font-size:8px;color:var(--sub)">血氧</div></div>
-      <div style="font-size:10px;color:var(--sub);max-width:150px">${curP.cd}</div>
-    `;
-  }else{document.getElementById('rPat').style.display='none';}
-
-  if(sc.d&&sc.d.length>0)showD(sc.d[0].s,sc.d[0].t);
-
-  if(sc.na){
-    setTimeout(()=>{showN(sc.na);setTimeout(()=>showCh(sc),1200);},(sc.d?sc.d.length*1800:500));
-  }else{
-    setTimeout(()=>showCh(sc),(sc.d?sc.d.length*1800:500));
-  }
-}
 
 function showD(s,t){
   const i=CH[s]||CH['王老师'];
@@ -604,25 +502,6 @@ function showF(c,sc){
   document.getElementById('rCh').innerHTML='';
 }
 
-function continueRoom(){
-  if(!ans)return;
-  document.getElementById('roomOv').classList.remove('active');ans=false;
-  const nx=pnx;pnx=null;
-  if(nx==='ending'||(curR&&curR.ed)){showEnd();return;}
-
-  const ni=DOORS.findIndex(d=>d.id===nx);
-  if(ni>=0){
-    const de=document.getElementById('dr'+ni);if(de)de.classList.remove('locked');
-    curD=Math.max(curD,ni-1);updateDrs();
-    const ci=DOORS.findIndex(d=>d.id===curR.id);
-    if(ci>=0){const dd=document.getElementById('dr'+ci);if(dd)dd.classList.add('done');}
-    setTimeout(()=>{const tx=100+ni*DS+33;walkTo(tx,()=>{if(nx)openRoom(nx);});},300);
-  }
-  upSky();
-}
-
-function closeRoom(){document.getElementById('roomOv').classList.remove('active');document.getElementById('tip').style.display='block';}
-function updateDrs(){DOORS.forEach((d,i)=>{const e=document.getElementById('dr'+i);if(i<=curD+1)e.classList.remove('locked');else e.classList.add('locked');});}
 
 // ═══════════════════════════════════════
 //  终章
@@ -703,23 +582,49 @@ function trigO(){document.getElementById('outOv').classList.add('active');}
 // ═══════════════════════════════════════
 function startGame(){
   pn=(document.getElementById('pName').value||'小李').trim();
-  tSc=okN=bdN=iR=0;curP=null;ans=false;curD=-1;
+  tSc=okN=bdN=iR=0;curP=null;ans=false;
   upS();upR();document.getElementById('introOv').style.display='none';
-  document.getElementById('tip').style.display='block';
-  document.querySelectorAll('.door-group').forEach(d=>{d.classList.add('locked');d.classList.remove('done');});
-  upSky();updateDrs();openRoom('prologue');
+  document.getElementById('roomOv').classList.add('active');
+  upSky();goScene('prologue');
+}
+function goScene(sid){
+  const sc=gs(sid);if(!sc)return;
+  curR=sc;ans=false;curP=null;
+  document.getElementById('rCh').innerHTML='';
+  document.getElementById('rFb').classList.remove('show','ok','err');document.getElementById('rFb').innerHTML='';
+  document.getElementById('rBtn').classList.remove('show');
+
+  const di=DOORS.findIndex(d=>d.id===sid);
+  document.getElementById('roomBadge').textContent=di>=0?`场景 ${di+1}/07`:sid==='ending'?'🎓':sid==='prologue'?'序章':'';
+  document.getElementById('roomTit').textContent=di>=0?DOORS[di].label:'';
+
+  if(sc.p){
+    curP=JSON.parse(JSON.stringify(sc.p));
+    document.getElementById('rPat').style.display='flex';
+    document.getElementById('rPat').innerHTML=`
+      <span style="font-weight:700;font-size:11px;min-width:70px">🩺 ${curP.n}</span>
+      <div style="text-align:center"><div style="font-size:14px;font-weight:700">${curP.tp.toFixed(1)}°C</div><div style="font-size:8px;color:var(--sub)">体温</div></div>
+      <div style="text-align:center"><div style="font-size:14px;font-weight:700">${curP.hr}</div><div style="font-size:8px;color:var(--sub)">心率</div></div>
+      <div style="text-align:center"><div style="font-size:14px;font-weight:700">${curP.sp}%</div><div style="font-size:8px;color:var(--sub)">血氧</div></div>
+    `;
+  }else{document.getElementById('rPat').style.display='none';}
+
+  if(sc.d&&sc.d.length>0)showD(sc.d[0].s,sc.d[0].t);
+  if(sc.na){setTimeout(()=>{showN(sc.na);setTimeout(()=>showCh(sc),1200);},(sc.d?sc.d.length*1800:500));}
+  else{setTimeout(()=>showCh(sc),(sc.d?sc.d.length*1800:500));}
+}
+function continueRoom(){
+  if(!ans)return;ans=false;
+  const nx=pnx;pnx=null;
+  if(nx==='ending'||(curR&&curR.ed)){showEnd();return;}
+  goScene(nx);
 }
 function restartGame(){
   document.getElementById('outOv').classList.remove('active');
-  document.getElementById('roomOv').classList.remove('active');
-  tSc=okN=bdN=iR=0;curP=null;ans=false;curD=-1;
+  tSc=okN=bdN=iR=0;curP=null;ans=false;
   upS();upR();document.getElementById('introOv').style.display='flex';
-  document.getElementById('tip').style.display='none';
-  document.querySelectorAll('.door-group').forEach(d=>{d.classList.add('locked');d.classList.remove('done');});
-  document.getElementById('ch').style.left='28px';upSky();
+  document.getElementById('roomOv').classList.remove('active');
 }
-
-buildCorridor();upS();
 </script>
 </body>
 </html>
