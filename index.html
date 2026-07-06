@@ -6,311 +6,264 @@
 <title>隔离防护培训</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
-  :root{
-    --bg:#fefae0;--turquoise:#00a8b5;--coral:#ff6b6b;
-    --yellow:#ffd166;--green:#06d6a0;--blue:#457b9d;
-    --pink:#ff8fa3;--lavender:#cdb4db;--text:#2d2d2d;--sub:#6b6b6b;
-  }
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
-    background:#fefae0;overflow:hidden;height:100vh;
-  }
-
-  /* ── SVG 滤镜 ────────────────────── */
-  .filter-layer{position:fixed;inset:0;pointer-events:none;z-index:0;}
-
-  /* ── HUD ─────────────────────────── */
-  .hud{
-    position:fixed;top:0;left:0;right:0;z-index:10;
-    padding:6px 14px;display:flex;justify-content:space-between;align-items:center;
-    background:rgba(254,250,224,.92);border-bottom:2px solid rgba(0,0,0,.06);
-  }
-  .hud .title{font-size:14px;font-weight:700;color:var(--text);}
-  .hud .stats{display:flex;gap:8px;font-size:11px;}
-  .risk-line{display:flex;align-items:center;gap:6px;font-size:10px;margin-top:3px;padding:0 14px;}
-  .risk-line .r-outer{flex:1;height:4px;background:#e8e4d0;border-radius:2px;overflow:hidden;}
-  .risk-line .r-inner{height:100%;border-radius:2px;transition:width .5s,background .5s;background:var(--green);}
-  .risk-line .r-inner.warn{background:var(--yellow);}
-  .risk-line .r-inner.danger{background:var(--coral);animation:pulse .6s infinite;}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  :root{--turquoise:#00a8b5;--coral:#ff6b6b;--yellow:#ffd166;--green:#06d6a0;--blue:#457b9d;--pink:#ff8fa3;--text:#2d2d2d;--sub:#6b6b6b;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#fefae0;overflow:hidden;height:100vh;}
 
   /* ── 天空 ────────────────────────── */
-  .sky-wrap{position:fixed;top:32px;left:0;right:0;height:28%;transition:background 1.5s;z-index:1;}
-  .sky-wrap.morning{background:linear-gradient(180deg,#a8dadc 0%,#f1faee 100%);}
-  .sky-wrap.noon{background:linear-gradient(180deg,#fdf0d5 0%,#fefae0 100%);}
-  .sky-wrap.evening{background:linear-gradient(180deg,#ffd166 0%,#f4a261 30%,#e9c46a 100%);}
-  .sun-ball{
-    position:absolute;width:44px;height:44px;border-radius:50%;
-    background:var(--yellow);transition:left 1.5s,top 1.5s;
-    box-shadow:0 0 28px rgba(255,209,102,.5);
+  .sky{position:fixed;top:0;left:0;right:0;height:45%;transition:background 1.5s;z-index:0;}
+  .sky.morning{background:linear-gradient(180deg,#a8dadc 0%,#c9e4de 40%,#e8f0e8 100%);}
+  .sky.noon{background:linear-gradient(180deg,#fdf0d5 0%,#fce8c4 50%,#fefae0 100%);}
+  .sky.evening{background:linear-gradient(180deg,#ffd166 0%,#f4a261 30%,#e9a87c 60%,#d4a08a 100%);}
+  .sun{position:fixed;width:48px;height:48px;border-radius:50%;background:var(--yellow);transition:left 1.5s,top 1.5s,opacity 1.5s;z-index:0;box-shadow:0 0 40px rgba(255,209,102,.6);}
+
+  /* ── 远山 ────────────────────────── */
+  .hills{position:fixed;top:38%;left:0;right:0;height:12%;z-index:0;opacity:.7;}
+  .hills svg{width:100%;height:100%;}
+
+  /* ── 云 ──────────────────────────── */
+  .cloud{position:fixed;z-index:0;opacity:.85;animation:drift linear infinite;pointer-events:none;}
+  @keyframes drift{from{transform:translateX(0)}to{transform:translateX(120vw)}}
+  .cloud svg{width:120px;height:50px;}
+
+  /* ── 地面 ────────────────────────── */
+  .ground{position:fixed;bottom:0;left:0;right:0;height:42%;z-index:1;
+    background:linear-gradient(180deg,#d4c8a8 0%,#c8b888 30%,#b8a878 70%,#a89868 100%);}
+  .ground::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:8px;
+    background:linear-gradient(90deg,#9ab87a 0%,#8aac6e 20%,#9ab87a 40%,#8aac6e 60%,#9ab87a 80%,#8aac6e 100%);
+  }
+  /* 草地纹理 */
+  .grass{position:fixed;bottom:42%;left:0;right:0;height:20px;z-index:2;
+    background:linear-gradient(180deg,#8ab86a 0%,#7aaa5e 50%,#9ab87a 100%);
+    -webkit-mask-image:repeating-linear-gradient(90deg,transparent,transparent 6px,#000 6px,#000 7px);}
+  .grass2{position:fixed;bottom:42.5%;left:0;right:0;height:12px;z-index:2;
+    background:linear-gradient(180deg,#92c070 0%,#8ab86a 100%);
+    -webkit-mask-image:repeating-linear-gradient(105deg,transparent,transparent 8px,#000 8px,#000 9px);}
+
+  /* ── 路 ──────────────────────────── */
+  .path{position:fixed;bottom:28%;left:0;right:0;height:14%;z-index:3;
+    background:linear-gradient(180deg,#e8dcc8,#ddd0b8 30%,#d4c8a8 60%,#ccc098);
+    clip-path:polygon(0 15%,3% 0,97% 0,100% 15%,100% 100%,0 100%);}
+
+  /* ── 医院建筑 ────────────────────── */
+  .hospital{position:fixed;top:18%;right:5%;z-index:2;display:flex;align-items:flex-end;gap:4px;}
+  .h-wing{background:#f0ebe0;border:2px solid rgba(0,0,0,.12);border-radius:3px 3px 0 0;}
+  .h-wing .h-win{
+    display:block;background:rgba(168,218,220,.5);border:1px solid rgba(0,0,0,.08);
+    margin:3px 4px;border-radius:1px;
+  }
+  .h-sign{
+    align-self:flex-start;margin-right:4px;font-size:10px;font-weight:700;color:var(--text);
+    background:#fff;border:1.5px solid rgba(0,0,0,.1);padding:2px 6px;border-radius:3px;
   }
 
-  /* ── 走廊 ────────────────────────── */
-  .vp{
-    position:fixed;top:28%;left:0;right:0;bottom:0;z-index:2;
-    overflow-x:auto;overflow-y:hidden;scroll-behavior:smooth;
+  /* ── 树 ──────────────────────────── */
+  .tree{position:fixed;z-index:3;display:flex;flex-direction:column;align-items:center;pointer-events:none;}
+  .tree .trunk{width:8px;background:linear-gradient(180deg,#8a6a4a,#6a4a2a);border-radius:3px;}
+  .tree .canopy{
+    border-radius:50%;background:linear-gradient(135deg,#7ab85a,#5a9840);
+    border:2px solid rgba(0,0,0,.08);margin-top:-5px;
   }
-  .vp::-webkit-scrollbar{display:none;}
-  .corridor{position:relative;height:100%;}
 
-  .wall-zone{
-    position:absolute;top:0;left:0;right:0;height:58%;
-    background:linear-gradient(180deg,#fefae0,#f5f0e0);
-    border-bottom:3px solid rgba(0,0,0,.08);
-  }
-  .floor-zone{
-    position:absolute;bottom:0;left:0;right:0;height:42%;
-    background:linear-gradient(180deg,#e8e2d4,#d4cebc 60%,#c8c0a8);
-  }
-  .floor-line{position:absolute;top:0;left:0;right:0;height:3px;background:rgba(0,0,0,.1);}
+  /* ── 花丛 ────────────────────────── */
+  .bush{position:fixed;z-index:3;pointer-events:none;}
+  .bush .blob{border-radius:50% 50% 35% 35%;background:#6ab84a;border:1.5px solid rgba(0,0,0,.06);display:inline-block;}
+  .bush .dot{width:6px;height:6px;border-radius:50%;position:absolute;}
 
-  /* ── 门 ──────────────────────────── */
-  .door-group{
-    position:absolute;top:6%;display:flex;flex-direction:column;align-items:center;
-    cursor:pointer;transition:transform .15s;z-index:3;
-  }
-  .door-group:hover{transform:scale(1.05);}
-  .door-group.locked{opacity:.4;pointer-events:none;filter:grayscale(.4);}
-  .door-group.done{opacity:.7;}
-  .door-group.done .door-frame{border-color:var(--green);}
-
-  .door-frame{
-    width:66px;height:100px;border:3.5px solid rgba(0,0,0,.18);
-    border-radius:5px 5px 0 0;background:rgba(255,255,255,.55);
-    display:flex;align-items:center;justify-content:center;position:relative;
-  }
-  .door-icon{font-size:28px;}
-  .door-handle{
-    position:absolute;right:7px;top:50%;width:7px;height:7px;
-    border-radius:50%;background:rgba(0,0,0,.22);
-  }
-  .door-label{font-size:9px;font-weight:700;color:var(--text);margin-top:3px;text-align:center;max-width:72px;}
-
-  /* ── 窗户 ────────────────────────── */
-  .win{
-    position:absolute;top:10%;width:80px;height:60px;
-    background:rgba(168,218,220,.35);border:2.5px solid rgba(0,0,0,.12);
-    border-radius:3px;box-shadow:inset 0 0 16px rgba(255,255,255,.35);z-index:1;
-  }
-  .win::after{content:'';position:absolute;top:0;left:50%;width:2.5px;height:100%;background:rgba(0,0,0,.08);}
+  /* ── 鸟 ──────────────────────────── */
+  .bird{position:fixed;z-index:1;pointer-events:none;animation:birdFly linear infinite;}
+  @keyframes birdFly{0%{transform:translate(0,0)}25%{transform:translate(15vw,-30px)}50%{transform:translate(30vw,0)}75%{transform:translate(15vw,30px)}100%{transform:translate(0,0)}}
 
   /* ── 角色 ────────────────────────── */
-  .char{
-    position:absolute;bottom:48%;transition:left .7s cubic-bezier(.25,.46,.45,.94);
-    z-index:5;display:flex;flex-direction:column;align-items:center;pointer-events:none;
-  }
-  .char .head{
-    width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#fecaca,#fca5a5);
-    display:flex;align-items:center;justify-content:center;font-size:20px;
-    border:2.5px solid rgba(0,0,0,.12);
-  }
-  .char .body{
-    width:26px;height:30px;border-radius:9px 9px 5px 5px;
-    background:linear-gradient(180deg,#f8fafc,#e2e8f0);margin-top:-3px;
-    border:2.5px solid rgba(0,0,0,.08);
-  }
-  .char.walking .head{animation:bob .35s ease-in-out infinite;}
-  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+  .char{position:fixed;bottom:32%;transition:left .8s cubic-bezier(.25,.46,.45,.94);z-index:10;display:flex;flex-direction:column;align-items:center;}
+  .char .head{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#fecaca,#fca5a5);display:flex;align-items:center;justify-content:center;font-size:22px;border:3px solid rgba(0,0,0,.12);}
+  .char .body{width:26px;height:32px;border-radius:10px 10px 6px 6px;background:linear-gradient(180deg,#f8fafc,#e2e8f0);margin-top:-3px;border:3px solid rgba(0,0,0,.08);}
+  .char.walking .head{animation:bob .3s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 
-  /* ── 护士 ────────────────────────── */
   .npc{
-    position:absolute;bottom:48%;z-index:4;display:flex;flex-direction:column;align-items:center;
-    pointer-events:none;
+    position:fixed;bottom:32%;z-index:9;display:flex;flex-direction:column;align-items:center;
+    transition:opacity .5s;
   }
-  .npc .nhead{
-    width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#fde68a,#fcd34d);
-    display:flex;align-items:center;justify-content:center;font-size:22px;
-    border:2.5px solid rgba(0,0,0,.12);
-  }
-  .npc .nbody{
-    width:28px;height:34px;border-radius:10px 10px 5px 5px;
-    background:linear-gradient(180deg,#bfdbfe,#93c5fd);margin-top:-3px;
-    border:2.5px solid rgba(0,0,0,.08);
-  }
+  .npc .nhead{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#fde68a,#fcd34d);display:flex;align-items:center;justify-content:center;font-size:24px;border:3px solid rgba(0,0,0,.12);}
+  .npc .nbody{width:28px;height:36px;border-radius:12px 12px 6px 6px;background:linear-gradient(180deg,#bfdbfe,#93c5fd);margin-top:-3px;border:3px solid rgba(0,0,0,.08);}
 
-  /* ── 指引 ────────────────────────── */
-  .tip{
-    position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:6;
-    font-size:10px;color:var(--sub);background:rgba(254,250,224,.85);
-    padding:3px 12px;border-radius:8px;border:1.5px solid rgba(0,0,0,.06);
-    animation:tipFade 2s ease-in-out infinite;pointer-events:none;
+  /* ── 对话气泡(场景内) ────────────── */
+  .scene-bubble{
+    position:fixed;bottom:46%;z-index:20;background:#fffef5;border:3px solid rgba(0,0,0,.14);
+    border-radius:14px;padding:16px 20px;max-width:72%;box-shadow:4px 4px 0 rgba(0,0,0,.06);
+    animation:bubIn .3s ease;display:none;
+    left:50%;transform:translateX(-50%);
   }
-  @keyframes tipFade{0%,100%{opacity:.45}50%{opacity:1}}
-
-  /* ── 房间弹窗 ────────────────────── */
-  .room-overlay{
-    position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.45);
-    display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px);
+  .scene-bubble::after{
+    content:'';position:absolute;bottom:-14px;left:40px;width:0;height:0;
+    border-left:10px solid transparent;border-right:10px solid transparent;
+    border-top:14px solid rgba(0,0,0,.14);
   }
-  .room-overlay.active{display:flex;}
+  .scene-bubble .b-speaker{font-size:11px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+  .scene-bubble .b-text{font-size:14px;color:var(--text);line-height:1.7;min-height:20px;}
+  .scene-bubble.show{display:block;}
+  @keyframes bubIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
-  .room-card{
-    background:#fefae0;border:3.5px solid rgba(0,0,0,.15);border-radius:14px;
-    width:90%;max-width:460px;max-height:82vh;overflow-y:auto;
-    box-shadow:5px 5px 0 rgba(0,0,0,.06);animation:popIn .3s ease;
+  /* ── 选项(场景内) ────────────────── */
+  .scene-choices{
+    position:fixed;bottom:20%;z-index:20;display:none;flex-direction:column;gap:8px;
+    left:50%;transform:translateX(-50%);width:78%;max-width:500px;
   }
-  @keyframes popIn{from{transform:scale(.93);opacity:0}to{transform:scale(1);opacity:1}}
-
-  .room-header{
-    padding:12px 16px;border-bottom:2px solid rgba(0,0,0,.06);
-    display:flex;justify-content:space-between;align-items:center;
+  .scene-choices.show{display:flex;}
+  .sc-btn{
+    width:100%;padding:11px 14px;text-align:left;
+    border:2.5px solid rgba(0,0,0,.14);border-radius:10px;
+    background:rgba(255,255,253,.85);cursor:pointer;font-size:13px;font-family:inherit;
+    transition:all .12s;color:var(--text);backdrop-filter:blur(4px);
   }
-  .room-body{padding:14px 16px;}
+  .sc-btn:hover{border-color:var(--blue);background:#f0f8fc;}
+  .sc-btn:disabled{pointer-events:none;opacity:.45;}
+  .sc-btn .sl{font-weight:700;margin-right:5px;color:var(--turquoise);}
+  .sc-btn.selected-correct{border-color:var(--green);background:#e0faf0;}
+  .sc-btn.selected-wrong{border-color:var(--coral);background:#ffe8e8;}
+  .sc-btn.show-correct{border-color:var(--green);border-style:dashed;}
 
-  .r-patient{
-    background:rgba(255,255,255,.55);border:2px solid rgba(0,0,0,.06);
-    border-radius:8px;padding:8px 12px;margin-bottom:12px;
-    display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11px;
+  /* ── 反馈横幅 ────────────────────── */
+  .scene-fb{
+    position:fixed;bottom:36%;z-index:20;display:none;
+    left:50%;transform:translateX(-50%);width:78%;max-width:500px;
+    padding:10px 14px;border-radius:8px;font-size:12px;
   }
-  .r-dialogue{
-    background:rgba(255,255,255,.75);border:2px solid rgba(0,0,0,.08);
-    border-radius:10px;padding:12px 14px;margin-bottom:12px;min-height:50px;
-  }
-  .r-dialogue .ds{font-size:11px;font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:5px;}
-  .r-dialogue .dt{font-size:13px;color:var(--text);line-height:1.65;}
+  .scene-fb.show{display:block;animation:bubIn .3s ease;}
+  .scene-fb.ok{background:#e0faf0;border:2px solid var(--green);}
+  .scene-fb.err{background:#ffe8e8;border:2px solid var(--coral);}
 
-  .r-choices{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
-  .rc-btn{
-    width:100%;padding:10px 12px;text-align:left;
-    border:2.5px solid rgba(0,0,0,.12);border-radius:8px;
-    background:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-family:inherit;
-    transition:all .12s;color:var(--text);
-  }
-  .rc-btn:hover{border-color:var(--blue);background:#f0f8fc;}
-  .rc-btn:disabled{pointer-events:none;opacity:.45;}
-  .rc-btn .rl{font-weight:700;margin-right:5px;color:var(--turquoise);}
-  .rc-btn.selected-correct{border-color:var(--green);background:#e0faf0;}
-  .rc-btn.selected-wrong{border-color:var(--coral);background:#ffe8e8;}
-  .rc-btn.show-correct{border-color:var(--green);border-style:dashed;}
-
-  .r-fb{display:none;padding:8px 12px;border-radius:6px;font-size:11px;margin-bottom:10px;}
-  .r-fb.show{display:block;}
-  .r-fb.ok{background:#e0faf0;border:1.5px solid var(--green);}
-  .r-fb.err{background:#ffe8e8;border:1.5px solid var(--coral);}
-
-  .r-btn{
-    display:none;width:100%;padding:9px;border:none;border-radius:8px;
+  .scene-next{
+    position:fixed;bottom:22%;z-index:21;display:none;
+    right:11%;padding:9px 22px;background:var(--turquoise);color:#fff;
+    border:2.5px solid var(--blue);border-radius:10px;
     font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
-    background:var(--turquoise);color:#fff;border:2.5px solid var(--blue);
-    box-shadow:2px 2px 0 rgba(0,0,0,.06);
+    box-shadow:3px 3px 0 rgba(0,0,0,.06);
   }
-  .r-btn.show{display:block;}
-  .r-btn:hover{background:var(--blue);}
+  .scene-next.show{display:block;}
+  .scene-next:hover{background:var(--blue);}
+
+  /* ── HUD ─────────────────────────── */
+  .hud{position:fixed;top:0;left:0;right:0;z-index:30;padding:6px 14px;display:flex;justify-content:space-between;align-items:center;background:rgba(254,250,224,.88);border-bottom:2px solid rgba(0,0,0,.06);font-size:13px;}
+  .risk-wrap{position:fixed;top:34px;left:16px;right:16px;z-index:30;display:flex;align-items:center;gap:6px;font-size:10px;}
+  .r-out{flex:1;height:4px;background:#e8e4d0;border-radius:2px;overflow:hidden;}
+  .r-in{height:100%;border-radius:2px;transition:width .5s,background .5s;background:var(--green);}
+  .r-in.warn{background:var(--yellow);}.r-in.danger{background:var(--coral);animation:pulse .6s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
   /* ── 开场 ────────────────────────── */
-  .intro-overlay{
-    position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.55);
-    display:flex;align-items:center;justify-content:center;backdrop-filter:blur(5px);
-  }
-  .intro-card{
-    background:#fefae0;border:3.5px solid rgba(0,0,0,.15);border-radius:16px;
-    padding:32px 28px;max-width:360px;text-align:center;
-    animation:popIn .35s ease;box-shadow:5px 5px 0 rgba(0,0,0,.06);
-  }
-  .intro-card .i-icon{font-size:44px;margin-bottom:6px;}
-  .intro-card h1{font-size:20px;color:var(--text);margin-bottom:3px;}
-  .intro-card .i-sub{font-size:11px;color:var(--sub);margin-bottom:16px;}
-  .intro-card input{
-    width:100%;padding:9px;border:2.5px solid rgba(0,0,0,.1);border-radius:8px;
-    font-size:14px;font-family:inherit;text-align:center;outline:none;margin-bottom:10px;
-    background:rgba(255,255,255,.6);
-  }
-  .intro-card input:focus{border-color:var(--blue);}
-  .intro-card .i-btn{
-    width:100%;padding:11px;background:var(--turquoise);color:#fff;
-    border:2.5px solid var(--blue);border-radius:8px;font-size:15px;
-    font-weight:700;cursor:pointer;font-family:inherit;
-  }
+  .intro-ov{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+  .intro-cd{background:#fefae0;border:3.5px solid rgba(0,0,0,.15);border-radius:16px;padding:30px 26px;max-width:340px;text-align:center;animation:popIn .35s ease;box-shadow:5px 5px 0 rgba(0,0,0,.06);}
+  @keyframes popIn{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+  .intro-cd h1{font-size:20px;color:var(--text);margin:6px 0 4px;}
+  .intro-cd .i-sub{font-size:11px;color:var(--sub);margin-bottom:14px;}
+  .intro-cd input{width:100%;padding:9px;border:2.5px solid rgba(0,0,0,.1);border-radius:8px;font-size:14px;font-family:inherit;text-align:center;outline:none;margin-bottom:10px;background:rgba(255,255,255,.6);}
+  .intro-cd input:focus{border-color:var(--blue);}
+  .intro-cd .i-btn{width:100%;padding:11px;background:var(--turquoise);color:#fff;border:2.5px solid var(--blue);border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
 
   /* ── 爆表 ────────────────────────── */
-  .outbreak-overlay{
-    display:none;position:fixed;inset:0;z-index:200;background:rgba(170,30,30,.92);
-    align-items:center;justify-content:center;backdrop-filter:blur(4px);
-  }
-  .outbreak-overlay.active{display:flex;}
-  .outbreak-card{
-    background:#fefae0;border:3.5px solid rgba(0,0,0,.15);border-radius:16px;
-    padding:32px 24px;max-width:360px;text-align:center;animation:popIn .35s ease;
-  }
-  .outbreak-card .o-icon{font-size:52px;margin-bottom:6px;}
-  .outbreak-card h2{font-size:18px;color:var(--coral);margin-bottom:6px;}
-  .outbreak-card p{font-size:13px;color:#666;margin-bottom:14px;}
-  .outbreak-card .o-btn{padding:10px 24px;background:var(--coral);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
-
-  @media(max-width:480px){
-    .door-frame{width:52px;height:80px;}
-    .door-icon{font-size:22px;}
-    .door-label{font-size:8px;max-width:58px;}
-  }
+  .out-ov{display:none;position:fixed;inset:0;z-index:200;background:rgba(170,30,30,.92);align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+  .out-ov.active{display:flex;}
+  .out-cd{background:#fefae0;border:3.5px solid rgba(0,0,0,.15);border-radius:16px;padding:32px 24px;max-width:340px;text-align:center;animation:popIn .35s ease;}
+  .out-cd h2{font-size:18px;color:var(--coral);margin:6px 0;}
+  .out-cd .o-btn{padding:10px 24px;background:var(--coral);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 </style>
 </head>
 <body>
 
-<svg class="filter-layer" width="0" height="0">
-  <defs>
-    <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="n"/>
-      <feDisplacementMap in="SourceGraphic" in2="n" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-  </defs>
-</svg>
+<svg width="0" height="0"><defs>
+  <filter id="wobble"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.5"/></filter>
+</defs></svg>
 
-<div class="hud" style="position:fixed;top:0;left:0;right:0;z-index:10;">
-  <span class="title">🏥 隔离防护培训</span>
-  <span class="stats">
-    ✅<span id="ok" style="color:var(--green);font-weight:700">0</span>
-    ❌<span id="bad" style="color:var(--coral);font-weight:700">0</span>
-    ⭐<span id="sc" style="color:#b8860b;font-weight:700">0</span>
-  </span>
-</div>
-<div class="risk-line" style="position:fixed;top:35px;left:0;right:0;z-index:10;">
-  🦠<span class="r-outer"><span class="r-inner" id="rIn" style="width:0%"></span></span><span id="rPct" style="font-size:9px;font-weight:700;color:var(--green)">0%</span>
-</div>
+<!-- 天空 -->
+<div class="sky morning" id="sky"></div>
+<div class="sun" id="sun" style="left:12%;top:8%;"></div>
 
-<div class="sky-wrap morning" id="skyW">
-  <div class="sun-ball" id="sunB" style="left:8%;top:18px;"></div>
-</div>
+<!-- 远山 -->
+<div class="hills"><svg viewBox="0 0 1200 80" preserveAspectRatio="none"><path d="M0,80 L0,40 Q60,10 120,35 Q180,20 240,45 Q300,15 360,38 Q420,25 480,32 Q540,10 600,40 Q660,20 720,35 Q780,10 840,42 Q900,25 960,30 Q1020,15 1080,38 Q1140,22 1200,50 L1200,80 Z" fill="rgba(0,0,0,.06)"/></svg></div>
 
-<div class="vp" id="vp">
-  <div class="corridor" id="corr">
-    <div class="wall-zone" id="wallZ"></div>
-    <div class="floor-zone" id="floorZ"><div class="floor-line"></div></div>
+<!-- 云 -->
+<div class="cloud" style="top:12%;left:-10%;animation-duration:90s;"><svg viewBox="0 0 120 50"><path d="M20,40 Q10,25 30,20 Q35,8 55,15 Q70,5 90,18 Q110,10 115,35 Q120,45 100,45 L20,45 Z" fill="rgba(255,255,255,.7)" stroke="rgba(0,0,0,.1)" stroke-width="1.5"/></svg></div>
+<div class="cloud" style="top:18%;left:40%;animation-duration:110s;animation-delay:-30s;"><svg viewBox="0 0 100 40"><path d="M15,35 Q8,22 25,18 Q30,8 48,14 Q60,5 78,16 Q92,10 95,30 Q98,38 82,38 L15,38 Z" fill="rgba(255,255,255,.6)" stroke="rgba(0,0,0,.08)" stroke-width="1.5"/></svg></div>
+
+<!-- 鸟 -->
+<div class="bird" style="top:20%;left:20%;animation-duration:14s;font-size:18px;">🐦</div>
+<div class="bird" style="top:15%;left:60%;animation-duration:18s;animation-delay:-6s;font-size:14px;">🐦</div>
+
+<!-- 地面 -->
+<div class="ground"></div>
+<div class="grass"></div>
+<div class="grass2"></div>
+<div class="path"></div>
+
+<!-- 医院建筑 -->
+<div class="hospital" style="top:19%;right:6%;">
+  <span class="h-sign">🏥</span>
+  <div class="h-wing" style="width:60px;height:90px;">
+    <span class="h-win" style="width:20px;height:16px;"></span>
+    <span class="h-win" style="width:20px;height:16px;"></span>
+    <span class="h-win" style="width:20px;height:16px;"></span>
   </div>
-</div>
-<div class="tip" id="tip">👆 点击亮着的门进入房间</div>
-
-<div class="room-overlay" id="roomOv">
-  <div class="room-card">
-    <div class="room-header">
-      <span style="font-size:10px;color:var(--sub)" id="roomBadge"></span>
-      <span style="font-size:14px;font-weight:700;color:var(--text)" id="roomTit"></span>
-      <span style="cursor:pointer;font-size:16px" onclick="document.getElementById('roomOv').classList.remove('active')">✕</span>
-    </div>
-    <div class="room-body">
-      <div class="r-patient" id="rPat" style="display:none"></div>
-      <div class="r-dialogue"><div class="ds" id="rSpk"></div><div class="dt" id="rTxt"></div></div>
-      <div class="r-choices" id="rCh"></div>
-      <div class="r-fb" id="rFb"></div>
-      <button class="r-btn" id="rBtn" onclick="continueRoom()">继续 ▸</button>
-    </div>
+  <div class="h-wing" style="width:50px;height:70px;">
+    <span class="h-win" style="width:18px;height:14px;"></span>
+    <span class="h-win" style="width:18px;height:14px;"></span>
   </div>
 </div>
 
-<div class="intro-overlay" id="introOv">
-  <div class="intro-card">
-    <div class="i-icon">🏥</div>
+<!-- 树 -->
+<div class="tree" style="left:8%;top:30%;"><div class="trunk" style="height:50px;"></div><div class="canopy" style="width:55px;height:55px;"></div></div>
+<div class="tree" style="left:25%;top:28%;"><div class="trunk" style="height:40px;"></div><div class="canopy" style="width:45px;height:45px;"></div></div>
+<div class="tree" style="left:72%;top:30%;"><div class="trunk" style="height:55px;"></div><div class="canopy" style="width:60px;height:60px;"></div></div>
+<div class="tree" style="left:88%;top:32%;"><div class="trunk" style="height:35px;"></div><div class="canopy" style="width:40px;height:40px;"></div></div>
+
+<!-- 花丛 -->
+<div class="bush" style="left:15%;bottom:40%;"><span class="blob" style="width:30px;height:20px;"></span><span class="blob" style="width:22px;height:16px;margin-left:-8px;"></span></div>
+<div class="bush" style="left:55%;bottom:41%;"><span class="blob" style="width:35px;height:22px;"></span><span class="blob" style="width:24px;height:18px;margin-left:-6px;"></span></div>
+<div class="bush" style="left:80%;bottom:40%;"><span class="blob" style="width:28px;height:18px;"></span></div>
+
+<!-- HUD -->
+<div class="hud">
+  <span style="font-weight:700">🏥 隔离防护培训</span>
+  <span>✅<span id="ok" style="color:var(--green);font-weight:700">0</span> ❌<span id="bad" style="color:var(--coral);font-weight:700">0</span> ⭐<span id="sc" style="color:#b8860b;font-weight:700">0</span></span>
+</div>
+<div class="risk-wrap">🦠<span class="r-out"><span class="r-in" id="rIn" style="width:0%"></span></span><span id="rPct" style="font-weight:700;color:var(--green);font-size:9px">0%</span></div>
+
+<!-- 护士 -->
+<div class="npc" id="npc" style="left:5%;"></div>
+<!-- 角色 -->
+<div class="char" id="ch" style="left:3%;"></div>
+
+<!-- 场景对话气泡 -->
+<div class="scene-bubble" id="bub">
+  <div class="b-speaker" id="bSpk"></div>
+  <div class="b-text" id="bTxt"></div>
+</div>
+
+<!-- 场景选项 -->
+<div class="scene-choices" id="sCh"></div>
+
+<!-- 反馈 -->
+<div class="scene-fb" id="sFb"></div>
+<button class="scene-next" id="sNext" onclick="continueGame()">继续 ▸</button>
+
+<!-- 开场 -->
+<div class="intro-ov" id="introOv">
+  <div class="intro-cd">
+    <div style="font-size:44px">🏥</div>
     <h1>隔离防护培训</h1>
-    <div class="i-sub">沿着医院走廊 · 走进每一扇门 · 做出你的选择</div>
+    <div class="i-sub">沿着医院小路 · 边散步边学习</div>
     <input type="text" id="pName" placeholder="你的名字" value="小李" maxlength="10">
-    <button class="i-btn" onclick="startGame()">开始 ▸</button>
+    <button class="i-btn" onclick="startGame()">开始散步 ▸</button>
   </div>
 </div>
 
-<div class="outbreak-overlay" id="outOv">
-  <div class="outbreak-card">
-    <div class="o-icon">⚠️</div>
+<!-- 爆表 -->
+<div class="out-ov" id="outOv">
+  <div class="out-cd">
+    <div style="font-size:52px">⚠️</div>
     <h2>院内感染爆发！</h2>
-    <p>多次防护措施不当，病原体在病区内扩散。<br>感染风险达到<b style="color:var(--coral)">100%</b></p>
+    <p style="font-size:13px;color:#666;margin:6px 0 14px">感染风险达到<b style="color:var(--coral)">100%</b></p>
     <button class="o-btn" onclick="restartGame()">🔄 重新开始</button>
   </div>
 </div>
@@ -319,30 +272,22 @@
 // ═══════════════════════════════════════
 //  数据
 // ═══════════════════════════════════════
-
-const DOORS=[
-  {id:'scene1',icon:'🚪',label:'手卫生'},
-  {id:'scene2',icon:'🛏️',label:'隔离感染源'},
-  {id:'scene3',icon:'🏥',label:'标准预防'},
-  {id:'scene4',icon:'🫁',label:'升级防护'},
-  {id:'scene5',icon:'🛡️',label:'PPE穿脱'},
-  {id:'scene6',icon:'💉',label:'职业暴露'},
-  {id:'scene7',icon:'🗑️',label:'医疗废物'},
-];
-
 const CH={
   '王老师':{c:'#3b82f6',a:'👩‍⚕️',r:'护士长'},
   '{name}':{c:'#22c55e',a:'🧑‍⚕️',r:'实习生'},
   '患者':{c:'#f59e0b',a:'😷',r:'患者'},
 };
 
-const ST={
-  prologue:{p:null,cast:['王老师'],d:[
-    {s:'王老师',t:'{name}，欢迎来到感染科实习。走廊上有七扇门——每一扇后面都是一个你必须面对的临床场景。'},
-    {s:'王老师',t:'记住两件事：<b>保护患者不受感染</b>，和<b>保护自己不被暴露</b>。'},
-  ],ch:[{t:'我准备好了！',ok:true,sc:0,nx:'scene1'}]},
+// 7个场景的位置（路上均匀分布）
+const SPOTS=[14,24,34,44,54,64,74]; // left百分比
 
-  scene1:{p:{n:'病区环境',tp:37.0,hr:80,sp:98,cd:'你的双手是病原体最常见的传播媒介'},cast:['王老师'],d:[
+const ST={
+  prologue:{p:null,d:[
+    {s:'王老师',t:'{name}，欢迎来到医院实习。沿着这条小路，我会带你经历七个临床场景。'},
+    {s:'王老师',t:'记住两件事：<b>保护患者不受感染</b>，和<b>保护自己不被暴露</b>。我们边走边聊。'},
+  ],ch:[{t:'我准备好了，出发吧！',ok:true,sc:0,nx:'scene1'}]},
+
+  scene1:{p:{n:'病区环境',tp:37.0,hr:80,sp:98,cd:'你的双手是病原体最常见的传播媒介'},d:[
     {s:'王老师',t:'病房里住着术后患者、化疗患者——免疫系统很脆弱。你手上看不见的细菌，对他们可能是致命的。'},
     {s:'王老师',t:'进病房之前，你应该怎么做？'},
   ],kb:'<b>📖 手卫生</b><br>WHO五大时刻：接触患者前、无菌操作前、接触体液后、接触患者后、接触环境后。',
@@ -352,37 +297,37 @@ const ST={
     {t:'我只是去看看，不碰患者不用洗',ok:false,sc:-5,rk:15,ef:{tp:'+0.5',hr:'+8',sp:'-2',cd:'病原体可通过环境表面传播'},fb:'❌ 即使不直接接触患者，也会接触门把手、床栏。',nx:'scene2'},
   ]},
 
-  scene2:{p:{n:'302床·MRSA感染',tp:37.8,hr:88,sp:96,cd:'隔壁303床是肾移植术后，使用免疫抑制剂'},cast:['王老师'],d:[
-    {s:'王老师',t:'302床MRSA。隔壁303床刚做完肾移植，在吃免疫抑制剂——如果你把MRSA带过去，后果不堪设想。'},
+  scene2:{p:{n:'302床·MRSA感染',tp:37.8,hr:88,sp:96,cd:'隔壁303床是肾移植术后，使用免疫抑制剂'},d:[
+    {s:'王老师',t:'302床MRSA。隔壁303床刚做完肾移植，在吃免疫抑制剂。如果你把MRSA带过去——'},
     {s:'王老师',t:'查体时你需要怎么防护？'},
   ],kb:'<b>📖 隔离感染源</b><br>多重耐药菌通过接触传播。隔离不仅保护自己，更是保护其他患者。手套+隔离衣+物品专用。',
   ch:[
     {t:'手套+隔离衣，出病房立即脱去洗手，物品专用',ok:true,sc:10,fb:'✅ 隔离感染源是保护其他患者的关键。',nx:'scene3'},
-    {t:'戴手套就行，隔离衣太麻烦了',ok:false,sc:-5,rk:15,ef:{tp:'+0.5',hr:'+10',sp:'-1',cd:'MRSA可能沾染白大褂'},fb:'❌ 白大褂袖子接触床单后，穿着同一件进303床——院内感染典型途径。',nx:'scene3'},
+    {t:'戴手套就行，隔离衣太麻烦了',ok:false,sc:-5,rk:15,ef:{tp:'+0.5',hr:'+10',sp:'-1',cd:'MRSA可能沾染白大褂'},fb:'❌ 白大褂袖子接触床单后，穿着同一件进303床。',nx:'scene3'},
     {t:'MRSA又不是空气传播，戴口罩就行',ok:false,sc:-8,rk:25,ef:{tp:'+0.8',hr:'+15',sp:'-3',cd:'⚠ 传播途径判断错误'},fb:'❌ MRSA是接触传播，防护重点是手和衣物。',nx:'scene3'},
   ]},
 
-  scene3:{p:{n:'急诊患者·情况不明',tp:39.5,hr:110,sp:93,cd:'刚入院，传染病史不详。身上有呕吐物'},cast:['患者'],d:[
+  scene3:{p:{n:'急诊患者·情况不明',tp:39.5,hr:110,sp:93,cd:'刚入院，传染病史不详。身上有呕吐物'},d:[
     {s:'患者',t:'（意识模糊）呃……好难受……'},
     {s:'王老师',t:'{name}，急诊送来的，病史不详，需要立即建立静脉通路。在检查结果出来之前——你怎么办？'},
   ],kb:'<b>📖 标准预防原则</b><br>将所有患者血液、体液、分泌物视为有传染性。基础防护：手套+口罩+手卫生。不等结果，先做防护。',
   ch:[
-    {t:'戴手套+口罩，接触呕吐物穿隔离衣，操作后洗手',ok:true,sc:10,fb:'✅ 标准预防核心：不知道有什么病，先默认做好防护。',nx:'scene4'},
+    {t:'戴手套+口罩，接触呕吐物穿隔离衣，操作后洗手',ok:true,sc:10,fb:'✅ 标准预防核心：不知道有什么病，先默认做好防护。等结果出来再升级或降级。',nx:'scene4'},
     {t:'先抽血送检，等结果再决定防护级别',ok:false,sc:-5,rk:20,ef:{tp:'+0.6',hr:'+12',sp:'-3',cd:'⚠ 等结果时你已暴露'},fb:'❌ 检验至少30分钟——如果他是乙肝携带者呢？标准预防的意义就是不等结果。',nx:'scene4'},
-    {t:'看他样子不像有传染病，简单防护就行',ok:false,sc:-8,rk:30,ef:{tp:'+1.0',hr:'+20',sp:'-5',cd:'⚠ 严重违反标准预防'},fb:'❌ 绝不能通过外表判断。很多感染者无症状。',nx:'scene4'},
+    {t:'看他样子不像有传染病，简单防护就行',ok:false,sc:-8,rk:30,ef:{tp:'+1.0',hr:'+20',sp:'-5',cd:'⚠ 严重违反标准预防'},fb:'❌ 绝不能通过外表判断。很多感染者无症状。标准预防一视同仁。',nx:'scene4'},
   ]},
 
-  scene4:{p:{n:'疑似肺结核',tp:38.1,hr:92,sp:93,cd:'咳嗽>3周、咯血，胸片双上肺浸润影'},cast:['患者'],d:[
+  scene4:{p:{n:'疑似肺结核',tp:38.1,hr:92,sp:93,cd:'咳嗽>3周、咯血，胸片双上肺浸润影'},d:[
     {s:'患者',t:'咳咳……医生，咳了三个多月，痰里带血丝……'},
     {s:'王老师',t:'{name}，胸片高度怀疑肺结核。之前戴的外科口罩不够了——知道病原体后，你该怎么调整？'},
   ],kb:'<b>📖 按传播途径升级防护</b><br>接触→飞沫→空气，防护逐级升级。结核是空气传播：N95+患者口罩+负压病房+专用通道。',
   ch:[
     {t:'换N95+患者外科口罩+负压病房+专用通道',ok:true,sc:10,fb:'✅ 从标准预防升级到空气隔离。知道传播途径就必须升级。',nx:'scene5'},
     {t:'外科口罩继续戴着，又不是手术室',ok:false,sc:-8,rk:35,ef:{tp:'+0.6',hr:'+12',sp:'-4',cd:'⚠ 飞沫核穿透外科口罩'},fb:'❌ 外科口罩不能过滤<5μm飞沫核。结核是空气传播，必须N95。',nx:'scene5'},
-    {t:'穿防护服，口罩无所谓',ok:false,sc:-5,rk:20,ef:{tp:'+0.3',hr:'+6',sp:'-2',cd:'防护服对空气传播无效'},fb:'❌ 空气传播的防护核心是呼吸防护（N95）。',nx:'scene5'},
+    {t:'穿防护服，口罩无所谓',ok:false,sc:-5,rk:20,ef:{tp:'+0.3',hr:'+6',sp:'-2',cd:'防护服对空气传播无效'},fb:'❌ 空气传播的防护核心是呼吸防护（N95），不是隔离衣。',nx:'scene5'},
   ]},
 
-  scene5:{p:{n:'模拟训练',tp:37.0,hr:75,sp:99,cd:'在缓冲间练习。穿脱顺序错误是职业暴露常见原因'},cast:['王老师'],d:[
+  scene5:{p:{n:'模拟训练',tp:37.0,hr:75,sp:99,cd:'在缓冲间练习。穿脱顺序错误是职业暴露常见原因'},d:[
     {s:'王老师',t:'{name}，防护用品——你穿对了吗？脱对了吗？很多人防护失败不是没穿，而是穿脱顺序错了。'},
   ],kb:'<b>📖 PPE穿脱顺序</b><br><b>穿（清洁→污染）</b>：洗手→隔离衣→口罩→护目镜→手套<br><b>脱（污染→清洁）</b>：手套→护目镜→隔离衣→口罩→洗手',
   ch:[
@@ -391,18 +336,18 @@ const ST={
     {t:'脱：先摘口罩再脱手套，反正都要扔',ok:false,sc:-8,rk:25,ef:{tp:'+0.6',hr:'+10',sp:'-3',cd:'⚠ 脱卸顺序错误导致自我污染'},fb:'❌ 手套最脏，必须先脱！先摘口罩污染物可能飞溅面部。',nx:'scene6'},
   ]},
 
-  scene6:{p:{n:'乙肝携带者',tp:36.8,hr:78,sp:97,cd:'HBsAg+。HBV体外可存活至少7天'},cast:['患者','王老师'],d:[
+  scene6:{p:{n:'乙肝携带者',tp:36.8,hr:78,sp:97,cd:'HBsAg+。HBV体外可存活至少7天'},d:[
     {s:'患者',t:'医生，输液完了，帮我拔一下针，谢谢。'},
     {s:'王老师',t:'（在整理推车，背对着你）'},
   ],na:'<b>⚡ 拔针瞬间——针头回弹，刺中左手食指！</b>伤口渗血。患者是乙肝携带者。老师没看到。',
   kb:'<b>📖 职业暴露处理</b><br>一挤（近心端→远心端）、二冲（流动水3-5min）、三消（碘伏）、四报（院感科）、五评（风险）。HIV暴露2h内服药。',
   ch:[
     {t:'立即挤血→冲洗→碘伏消毒→同时呼叫老师→报告院感科',ok:true,sc:10,fb:'✅ 分秒必争！每一秒都在减少病毒进入血液的机会。',nx:'scene7'},
-    {t:'伤口很小，贴创可贴继续工作',ok:false,sc:-10,rk:40,ef:{tp:'+0.2',hr:'+5',sp:'-1',cd:'⚠ 职业暴露未处理！HBV针刺风险约30%'},fb:'❌ <b>极度危险。</b>HBV针刺传播风险约30%。拖延的每一分钟都在增加感染概率。',nx:'scene7'},
+    {t:'伤口很小，贴创可贴继续工作',ok:false,sc:-10,rk:40,ef:{tp:'+0.2',hr:'+5',sp:'-1',cd:'⚠ 职业暴露未处理！HBV针刺风险约30%'},fb:'❌ <b>极度危险。</b>HBV针刺传播风险约30%。',nx:'scene7'},
     {t:'先找王老师报告，等她处理',ok:false,sc:-3,rk:10,ef:{tp:'+0.1',hr:'+3',sp:'0',cd:'耽误了伤口处理黄金时间'},fb:'不全面。报告是对的，但伤口处理优先级更高。一边挤血一边呼救。',nx:'scene7'},
   ]},
 
-  scene7:{p:{n:'培训收尾',tp:36.5,hr:72,sp:99,cd:'医疗废物处理是最后一步——也是最容易被忽略的'},cast:['王老师'],d:[
+  scene7:{p:{n:'培训收尾',tp:36.5,hr:72,sp:99,cd:'医疗废物处理是最后一步——也是最容易被忽略的'},d:[
     {s:'王老师',t:'{name}，最后一步。用过的棉签、手套、输液器、针头——怎么处理？'},
     {s:'王老师',t:'记住，保洁人员、转运人员——他们的安全也取决于你的这一步。'},
   ],kb:'<b>📖 医疗废物</b><br>感染性废物：双层黄袋、鹅颈扎口、标注日期<br>损伤性废物：利器盒<br>谁产生、谁分类、谁负责。',
@@ -412,8 +357,8 @@ const ST={
     {t:'有垃圾袋就行，单层双层区别不大',ok:false,sc:-5,rk:15,ef:{tp:'+0.3',hr:'+5',sp:'-1',cd:'单层袋易在转运中破裂'},fb:'不全面。感染性废物必须双层包装——单层破损污染整条转运路线。',nx:'ending'},
   ]},
 
-  ending:{p:null,cast:['王老师'],d:[
-    {s:'王老师',t:'{name}，七扇门你都走完了。记住两件事——'},
+  ending:{p:null,d:[
+    {s:'王老师',t:'{name}，七步都走完了。记住两件事——'},
     {s:'王老师',t:'<b>保护患者</b>：你的双手可以治愈，也可以传播。'},
     {s:'王老师',t:'<b>保护自己</b>：标准预防是底线，知道传播途径就升级，暴露后分秒必争。'},
   ],ed:true},
@@ -422,141 +367,124 @@ const ST={
 // ═══════════════════════════════════════
 //  状态
 // ═══════════════════════════════════════
-let pn='',curD=-1,curR=null,tSc=0,okN=0,bdN=0,iR=0,curP=null,ans=false,shCh=[],pnx=null;
-const DC=7,CW=2000,DS=260;
-
-const gs=(id)=>ST[id];
-const an=(t)=>t.replace(/\{name\}/g,pn||'小李');
-const rv=(v)=>Math.round(v*10)/10;
+let pn='',curS=null,curSpot=-1,tSc=0,okN=0,bdN=0,iR=0,curP=null,ans=false,shCh=[],pnx=null;
+const gs=(id)=>ST[id];const an=(t)=>t.replace(/\{name\}/g,pn||'小李');const rv=(v)=>Math.round(v*10)/10;
 const sh=(a)=>{const r=[...a];for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;};
 
 // ═══════════════════════════════════════
-//  走廊
+//  场景引擎
 // ═══════════════════════════════════════
+function goScene(sid){
+  const sc=gs(sid);if(!sc)return;
+  curS=sc;ans=false;curP=null;
+  document.getElementById('sCh').classList.remove('show');document.getElementById('sCh').innerHTML='';
+  document.getElementById('sFb').classList.remove('show','ok','err');document.getElementById('sFb').innerHTML='';
+  document.getElementById('sNext').classList.remove('show');
+  document.getElementById('bub').classList.remove('show');
 
-function showD(s,t){
-  const i=CH[s]||CH['王老师'];
-  document.getElementById('rSpk').innerHTML=`
-    <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:${i.c}18;text-align:center;line-height:22px;font-size:13px">${i.a}</span>
-    <span style="color:${i.c}">${an(s)}</span><span style="font-size:9px;color:var(--sub)">·${i.r}</span>
-  `;
-  typeT(an(t));
+  if(sc.p){curP=JSON.parse(JSON.stringify(sc.p));}
+
+  if(sc.d&&sc.d.length>0)showBubble(sc.d[0].s,sc.d[0].t);
+
+  if(sc.na){setTimeout(()=>{showNarr(sc.na);setTimeout(()=>showChoices(sc),1200);},(sc.d?sc.d.length*1800:500));}
+  else{setTimeout(()=>showChoices(sc),(sc.d?sc.d.length*1800:500));}
 }
-function showN(t){
-  document.getElementById('rSpk').innerHTML='<span style="color:var(--sub);font-weight:700">📋 事件</span>';
-  typeT(an(t));
+
+function showBubble(s,t){
+  const i=CH[s]||CH['王老师'];
+  document.getElementById('bSpk').innerHTML=`<span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:${i.c}18;text-align:center;line-height:22px;font-size:13px">${i.a}</span><span style="color:${i.c}">${an(s)}</span><span style="font-size:9px;color:var(--sub);margin-left:2px">·${i.r}</span>`;
+  document.getElementById('bub').classList.add('show');
+  typeText(an(t));
+}
+
+function showNarr(t){
+  document.getElementById('bSpk').innerHTML='<span style="color:var(--sub);font-weight:700">📋 事件</span>';
+  document.getElementById('bub').classList.add('show');
+  typeText(an(t));
 }
 
 let rt=null;
-function typeT(tx){
-  const el=document.getElementById('rTxt');let i=0;
-  clearInterval(rt);
-  rt=setInterval(()=>{
-    if(i<tx.length){el.innerHTML=tx.substring(0,i+1)+'<span style="display:inline-block;width:2px;height:13px;background:var(--text);margin-left:2px;vertical-align:middle;animation:blink .8s infinite"></span>';i++;}
-    else{clearInterval(rt);el.textContent=tx;}
-  },22);
+function typeText(tx){
+  const el=document.getElementById('bTxt');let i=0;clearInterval(rt);
+  rt=setInterval(()=>{if(i<tx.length){el.innerHTML=tx.substring(0,i+1)+'<span style="display:inline-block;width:2px;height:13px;background:var(--text);margin-left:2px;vertical-align:middle;animation:blink .8s infinite"></span>';i++;}else{clearInterval(rt);el.textContent=tx;}},22);
 }
 
-function showCh(sc){
-  const bar=document.getElementById('rCh');
-  const l=['A','B','C'];
+function showChoices(sc){
+  const bar=document.getElementById('sCh');const l=['A','B','C'];
   shCh=sh(sc.ch.map((c,i)=>({...c,oi:i})));
-  bar.innerHTML=shCh.map((c,i)=>`
-    <button class="rc-btn" id="rc${i}" onclick="selC(${i})"><span class="rl">${l[i]}</span>${an(c.t)}</button>
-  `).join('');
-  document.getElementById('rFb').classList.remove('show');
-  document.getElementById('rBtn').classList.remove('show');
+  bar.innerHTML=shCh.map((c,i)=>`<button class="sc-btn" id="sc${i}" onclick="sel(${i})"><span class="sl">${l[i]}</span>${an(c.t)}</button>`).join('');
+  bar.classList.add('show');
 }
 
-function selC(i){
+function sel(i){
   if(ans)return;ans=true;
   const c=shCh[i];if(!c)return;
-  document.querySelectorAll('.rc-btn').forEach(b=>b.disabled=true);
-
-  const btn=document.getElementById('rc'+i);
-  const ci=shCh.findIndex(x=>x.ok);
-
+  document.querySelectorAll('.sc-btn').forEach(b=>b.disabled=true);
+  const btn=document.getElementById('sc'+i),ci=shCh.findIndex(x=>x.ok);
   if(c.ok){btn.classList.add('selected-correct');tSc+=(c.sc||10);okN++;}
-  else{
-    btn.classList.add('selected-wrong');
-    if(ci>=0&&ci!==i)document.getElementById('rc'+ci).classList.add('show-correct');
-    tSc+=(c.sc||-5);bdN++;
-    if(c.rk){iR=Math.min(100,iR+c.rk);upR();}
-    if(c.ef&&curP)upP(c.ef);
-  }
-
-  pnx=c.nx;showF(c,curR);upS();
-  if(iR>=100)setTimeout(()=>trigO(),2000);
+  else{btn.classList.add('selected-wrong');if(ci>=0&&ci!==i)document.getElementById('sc'+ci).classList.add('show-correct');tSc+=(c.sc||-5);bdN++;if(c.rk){iR=Math.min(100,iR+c.rk);upR();}if(c.ef&&curP)upP(c.ef);}
+  pnx=c.nx;showFb(c,curS);upS();if(iR>=100)setTimeout(()=>trigO(),2000);
 }
 
-function showF(c,sc){
-  const fb=document.getElementById('rFb');
-  fb.className='r-fb show '+(c.ok?'ok':'err');
-  fb.innerHTML=`
-    <div style="font-weight:700;margin-bottom:1px">${c.ok?'✅ 正确！':'❌ 错误'}</div>
-    <div>${an(c.fb||'')}</div>
-    ${sc.kb?`<div style="margin-top:5px;padding:5px 7px;background:rgba(0,0,0,.03);border-radius:4px;font-size:10px">${an(sc.kb)}</div>`:''}
-  `;
-  document.getElementById('rBtn').classList.add('show');
-  document.getElementById('rBtn').textContent=pnx==='ending'?'查看总结 ▸':'走出房间 ▸';
-  document.getElementById('rCh').innerHTML='';
+function showFb(c,sc){
+  const fb=document.getElementById('sFb');fb.className='scene-fb show '+(c.ok?'ok':'err');
+  fb.innerHTML=`<div style="font-weight:700;margin-bottom:1px">${c.ok?'✅ 正确！':'❌ 错误'}</div><div>${an(c.fb||'')}</div>${sc.kb?`<div style="margin-top:5px;padding:5px 7px;background:rgba(0,0,0,.03);border-radius:4px;font-size:10px">${an(sc.kb)}</div>`:''}`;
+  document.getElementById('sNext').classList.add('show');
+  document.getElementById('sNext').textContent=pnx==='ending'?'查看总结 ▸':'继续散步 ▸';
 }
 
+function continueGame(){
+  if(!ans)return;ans=false;
+  document.getElementById('bub').classList.remove('show');
+  document.getElementById('sCh').classList.remove('show');
+  document.getElementById('sFb').classList.remove('show');
+  document.getElementById('sNext').classList.remove('show');
+  const nx=pnx;pnx=null;
+  if(nx==='ending'||(curS&&curS.ed)){showEnd();return;}
 
-// ═══════════════════════════════════════
-//  终章
-// ═══════════════════════════════════════
+  // 走向下一个位置
+  const di=['scene1','scene2','scene3','scene4','scene5','scene6','scene7'].indexOf(nx);
+  if(di>=0){curSpot=di;walkTo(SPOTS[di]);upSky();}
+  setTimeout(()=>goScene(nx),800);
+}
+
 function showEnd(){
-  const sc=gs('ending');curR=sc;ans=false;
-  document.getElementById('roomOv').classList.add('active');
-  document.getElementById('roomBadge').textContent='🎓 培训完成';
-  document.getElementById('roomTit').textContent='七扇门之后';
-  document.getElementById('rPat').style.display='none';
-  document.getElementById('rCh').innerHTML='';
-  document.getElementById('rFb').classList.remove('show');
-  document.getElementById('rBtn').classList.remove('show');
-  if(sc.d&&sc.d.length>0)showD(sc.d[0].s,sc.d[0].t);
-
+  curSpot=7;walkTo(85);upSky();
+  document.getElementById('bSpk').innerHTML='';
   const ms=70,pct=Math.max(0,Math.round((tSc/ms)*100));
   let st,g,c;
   if(pct>=90){st='⭐⭐⭐⭐⭐';g='优秀';c='医院感染防控知识掌握扎实！';}
   else if(pct>=70){st='⭐⭐⭐⭐';g='良好';c='大部分掌握，继续加强。';}
   else if(pct>=50){st='⭐⭐⭐';g='合格';c='基本概念有，关键判断需改进。';}
   else{st='⭐';g='需加强';c='存在较多盲区，请重新学习。';}
-
-  setTimeout(()=>{
-    document.getElementById('rCh').innerHTML=`
-      <div style="text-align:center;padding:12px 0">
-        <div style="font-size:32px">${st}</div>
-        <div style="font-size:18px;font-weight:700;color:${pct>=70?'var(--green)':pct>=50?'#b8860b':'var(--coral)'};margin:6px 0">${g}（${pct}分）</div>
-        <div style="font-size:12px;color:var(--sub);line-height:2">✅${okN}题 ❌${bdN}题 ⭐${tSc}/${ms}分</div>
-        <div style="font-size:11px;color:var(--sub);margin-top:2px">${c}</div>
-        <button onclick="restartGame()" style="margin-top:10px;padding:8px 22px;background:var(--turquoise);color:#fff;border:2.5px solid var(--blue);border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🔄 重新开始</button>
-      </div>
-    `;
-  },2500);
+  document.getElementById('bTxt').innerHTML=`<div style="text-align:center;padding:20px 0"><div style="font-size:36px">${st}</div><div style="font-size:20px;font-weight:700;color:${pct>=70?'var(--green)':pct>=50?'#b8860b':'var(--coral)'};margin:8px 0">${g}（${pct}分）</div><div style="font-size:12px;color:var(--sub);line-height:2">✅${okN}题 ❌${bdN}题 ⭐${tSc}/${ms}分</div><div style="font-size:11px;color:var(--sub);margin-top:2px">${c}</div><button onclick="restartGame()" style="margin-top:10px;padding:8px 22px;background:var(--turquoise);color:#fff;border:2.5px solid var(--blue);border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🔄 重新开始</button></div>`;
+  document.getElementById('bub').classList.add('show');
 }
 
 // ═══════════════════════════════════════
-//  天空
+//  走路 + 天空
 // ═══════════════════════════════════════
+function walkTo(lp){
+  const ch=document.getElementById('ch');ch.classList.add('walking');ch.style.left=lp+'%';
+  setTimeout(()=>ch.classList.remove('walking'),700);
+}
+
 function upSky(){
-  const prog=(curD+1)/DC;
-  const sk=document.getElementById('skyW');
-  const sb=document.getElementById('sunB');
-  if(prog<0.33){sk.className='sky-wrap morning';sb.style.left=(8+prog*90)+'%';sb.style.top='18px';}
-  else if(prog<0.66){sk.className='sky-wrap noon';sb.style.left=(38+(prog-.33)*90)+'%';sb.style.top='10px';}
-  else{sk.className='sky-wrap evening';sb.style.left=(68+(prog-.66)*60)+'%';sb.style.top='5px';}
+  const prog=(curSpot+1)/7;
+  const sky=document.getElementById('sky'),sun=document.getElementById('sun');
+  if(prog<0.33){sky.className='sky morning';sun.style.left=(10+prog*85)+'%';sun.style.top='8%';sun.style.opacity='1';}
+  else if(prog<0.66){sky.className='sky noon';sun.style.left=(38+(prog-.33)*85)+'%';sun.style.top='6%';sun.style.opacity='1';}
+  else{sky.className='sky evening';sun.style.left=(66+(prog-.66)*50)+'%';sun.style.top='5%';sun.style.opacity=(1-(prog-.66)*2)+'';}
 }
 
 // ═══════════════════════════════════════
 //  工具
 // ═══════════════════════════════════════
 function upR(){
-  const inr=document.getElementById('rIn'),pct=document.getElementById('rPct');
-  inr.style.width=iR+'%';inr.classList.remove('warn','danger');pct.style.color='var(--green)';
-  if(iR>=80){inr.classList.add('danger');pct.style.color='var(--coral)';}
-  else if(iR>=50){inr.classList.add('warn');pct.style.color='var(--yellow)';}
+  const inn=document.getElementById('rIn'),pct=document.getElementById('rPct');
+  inn.style.width=iR+'%';inn.classList.remove('warn','danger');pct.style.color='var(--green)';
+  if(iR>=80){inn.classList.add('danger');pct.style.color='var(--coral)';}
+  else if(iR>=50){inn.classList.add('warn');pct.style.color='var(--yellow)';}
   pct.textContent=iR+'%';
 }
 function upS(){document.getElementById('ok').textContent=okN;document.getElementById('bad').textContent=bdN;document.getElementById('sc').textContent=tSc;}
@@ -566,14 +494,6 @@ function upP(ef){
   if(ef.hr)curP.hr=rv(curP.hr+parseFloat(ef.hr));
   if(ef.sp)curP.sp=rv(curP.sp+parseFloat(ef.sp));
   if(ef.cd)curP.cd=ef.cd;
-  const pa=document.getElementById('rPat');
-  if(pa.style.display!=='none')pa.innerHTML=`
-    <span style="font-weight:700;font-size:11px;min-width:70px">🩺 ${curP.n}</span>
-    <div style="text-align:center"><div style="font-size:14px;font-weight:700;color:var(--coral)">${curP.tp.toFixed(1)}°C</div><div style="font-size:8px;color:var(--sub)">体温</div></div>
-    <div style="text-align:center"><div style="font-size:14px;font-weight:700">${curP.hr}</div><div style="font-size:8px;color:var(--sub)">心率</div></div>
-    <div style="text-align:center"><div style="font-size:14px;font-weight:700">${curP.sp}%</div><div style="font-size:8px;color:var(--sub)">血氧</div></div>
-    <div style="font-size:10px;color:var(--coral);max-width:150px">${curP.cd}</div>
-  `;
 }
 function trigO(){document.getElementById('outOv').classList.add('active');}
 
@@ -582,93 +502,28 @@ function trigO(){document.getElementById('outOv').classList.add('active');}
 // ═══════════════════════════════════════
 function startGame(){
   pn=(document.getElementById('pName').value||'小李').trim();
-  tSc=okN=bdN=iR=0;curP=null;ans=false;curD=-1;
+  tSc=okN=bdN=iR=0;curP=null;ans=false;curSpot=-1;
   upS();upR();document.getElementById('introOv').style.display='none';
-  document.getElementById('tip').style.display='block';
-  upSky();buildCorridor();goScene('prologue');
-}
-function goScene(sid){
-  const sc=gs(sid);if(!sc)return;
-  curR=sc;ans=false;curP=null;
-  document.getElementById('roomOv').classList.add('active');
-  document.getElementById('rCh').innerHTML='';
-  document.getElementById('rFb').classList.remove('show','ok','err');document.getElementById('rFb').innerHTML='';
-  document.getElementById('rBtn').classList.remove('show');
-
-  const di=DOORS.findIndex(d=>d.id===sid);
-  document.getElementById('roomBadge').textContent=di>=0?`场景 ${di+1}/07`:sid==='ending'?'🎓':sid==='prologue'?'序章':'';
-  document.getElementById('roomTit').textContent=di>=0?DOORS[di].label:'';
-
-  if(sc.p){
-    curP=JSON.parse(JSON.stringify(sc.p));
-    document.getElementById('rPat').style.display='flex';
-    document.getElementById('rPat').innerHTML=`
-      <span style="font-weight:700;font-size:11px;min-width:70px">🩺 ${curP.n}</span>
-      <div style="text-align:center"><div style="font-size:14px;font-weight:700">${curP.tp.toFixed(1)}°C</div><div style="font-size:8px;color:var(--sub)">体温</div></div>
-      <div style="text-align:center"><div style="font-size:14px;font-weight:700">${curP.hr}</div><div style="font-size:8px;color:var(--sub)">心率</div></div>
-      <div style="text-align:center"><div style="font-size:14px;font-weight:700">${curP.sp}%</div><div style="font-size:8px;color:var(--sub)">血氧</div></div>
-    `;
-  }else{document.getElementById('rPat').style.display='none';}
-
-  if(sc.d&&sc.d.length>0)showD(sc.d[0].s,sc.d[0].t);
-  if(sc.na){setTimeout(()=>{showN(sc.na);setTimeout(()=>showCh(sc),1200);},(sc.d?sc.d.length*1800:500));}
-  else{setTimeout(()=>showCh(sc),(sc.d?sc.d.length*1800:500));}
-}
-function continueRoom(){
-  if(!ans)return;
-  document.getElementById('roomOv').classList.remove('active');ans=false;
-  const nx=pnx;pnx=null;
-  if(nx==='ending'||(curR&&curR.ed)){showEnd();return;}
-  // 走路到下一个位置
-  const ni=DOORS.findIndex(d=>d.id===nx);
-  if(ni>=0){
-    curD=ni;
-    const tx=100+ni*DS+33;
-    walkTo(tx,()=>{goScene(nx);upSky();});
-  }else{goScene(nx);}
+  document.getElementById('ch').style.left='3%';
+  document.getElementById('npc').style.opacity='1';
+  // 画护士和角色
+  const np=document.getElementById('npc');np.innerHTML='<div class="nhead">👩‍⚕️</div><div class="nbody"></div>';
+  const ch=document.getElementById('ch');ch.innerHTML='<div class="head">🧑‍⚕️</div><div class="body"></div>';
+  upSky();goScene('prologue');
 }
 function restartGame(){
   document.getElementById('outOv').classList.remove('active');
-  document.getElementById('roomOv').classList.remove('active');
-  tSc=okN=bdN=iR=0;curP=null;ans=false;curD=-1;
+  tSc=okN=bdN=iR=0;curP=null;ans=false;curSpot=-1;
   upS();upR();document.getElementById('introOv').style.display='flex';
-  document.getElementById('tip').style.display='none';
-  document.getElementById('ch').style.left='28px';upSky();
+  document.getElementById('ch').style.left='3%';
+  document.getElementById('bub').classList.remove('show');
+  document.getElementById('sCh').classList.remove('show');
+  document.getElementById('sFb').classList.remove('show');
+  document.getElementById('sNext').classList.remove('show');
+  upSky();
 }
 
-// ── 走廊 ────────────────────────────
-function buildCorridor(){
-  const w=document.getElementById('wallZ');w.innerHTML='';
-  const f=document.getElementById('floorZ');f.innerHTML='<div class="floor-line"></div>';
-  document.getElementById('corr').style.width=CW+'px';
-
-  for(let i=0;i<4;i++){
-    const wi=document.createElement('div');wi.className='win';
-    wi.style.left=(180+i*460)+'px';w.appendChild(wi);
-  }
-
-
-  const np=document.createElement('div');np.className='npc';np.id='npc';np.style.left='28px';
-  np.innerHTML='<div class="nhead">👩‍⚕️</div><div class="nbody"></div>';
-  w.appendChild(np);
-
-  const ch=document.createElement('div');ch.className='char';ch.id='ch';ch.style.left='28px';
-  ch.innerHTML='<div class="head">🧑‍⚕️</div><div class="body"></div>';
-  w.appendChild(ch);
-
-  for(let x=0;x<CW;x+=70){
-    const t=document.createElement('div');
-    t.style.cssText=`position:absolute;left:${x}px;top:18px;width:68px;height:34px;border:1px solid rgba(0,0,0,.04);`;
-    f.appendChild(t);
-  }
-}
-function walkTo(tx,cb){
-  const ch=document.getElementById('ch');
-  ch.classList.add('walking');ch.style.left=tx+'px';
-  const vp=document.getElementById('vp');
-  vp.scrollTo({left:Math.max(0,tx-vp.clientWidth/2),behavior:'smooth'});
-  setTimeout(()=>{ch.classList.remove('walking');if(cb)cb();},700);
-}
+startGame();
 </script>
 </body>
 </html>
