@@ -582,14 +582,15 @@ function trigO(){document.getElementById('outOv').classList.add('active');}
 // ═══════════════════════════════════════
 function startGame(){
   pn=(document.getElementById('pName').value||'小李').trim();
-  tSc=okN=bdN=iR=0;curP=null;ans=false;
+  tSc=okN=bdN=iR=0;curP=null;ans=false;curD=-1;
   upS();upR();document.getElementById('introOv').style.display='none';
-  document.getElementById('roomOv').classList.add('active');
-  upSky();goScene('prologue');
+  document.getElementById('tip').style.display='block';
+  upSky();buildCorridor();goScene('prologue');
 }
 function goScene(sid){
   const sc=gs(sid);if(!sc)return;
   curR=sc;ans=false;curP=null;
+  document.getElementById('roomOv').classList.add('active');
   document.getElementById('rCh').innerHTML='';
   document.getElementById('rFb').classList.remove('show','ok','err');document.getElementById('rFb').innerHTML='';
   document.getElementById('rBtn').classList.remove('show');
@@ -614,16 +615,69 @@ function goScene(sid){
   else{setTimeout(()=>showCh(sc),(sc.d?sc.d.length*1800:500));}
 }
 function continueRoom(){
-  if(!ans)return;ans=false;
+  if(!ans)return;
+  document.getElementById('roomOv').classList.remove('active');ans=false;
   const nx=pnx;pnx=null;
   if(nx==='ending'||(curR&&curR.ed)){showEnd();return;}
-  goScene(nx);
+  // 走路到下一个位置
+  const ni=DOORS.findIndex(d=>d.id===nx);
+  if(ni>=0){
+    curD=ni;
+    const tx=100+ni*DS+33;
+    walkTo(tx,()=>{goScene(nx);upSky();});
+  }else{goScene(nx);}
 }
 function restartGame(){
   document.getElementById('outOv').classList.remove('active');
-  tSc=okN=bdN=iR=0;curP=null;ans=false;
-  upS();upR();document.getElementById('introOv').style.display='flex';
   document.getElementById('roomOv').classList.remove('active');
+  tSc=okN=bdN=iR=0;curP=null;ans=false;curD=-1;
+  upS();upR();document.getElementById('introOv').style.display='flex';
+  document.getElementById('tip').style.display='none';
+  document.getElementById('ch').style.left='28px';upSky();
+}
+
+// ── 走廊 ────────────────────────────
+function buildCorridor(){
+  const w=document.getElementById('wallZ');w.innerHTML='';
+  const f=document.getElementById('floorZ');f.innerHTML='<div class="floor-line"></div>';
+  document.getElementById('corr').style.width=CW+'px';
+
+  for(let i=0;i<4;i++){
+    const wi=document.createElement('div');wi.className='win';
+    wi.style.left=(180+i*460)+'px';w.appendChild(wi);
+  }
+
+  DOORS.forEach((d,i)=>{
+    const l=100+i*DS;
+    const g=document.createElement('div');
+    g.className='door-group';g.id='dr'+i;g.style.left=l+'px';g.style.pointerEvents='none';
+    const fr=document.createElement('div');fr.className='door-frame';
+    fr.innerHTML=`<span class="door-icon">${d.icon}</span><div class="door-handle"></div>`;
+    const lb=document.createElement('div');lb.className='door-label';
+    lb.innerHTML=`${i+1}. ${d.label}`;
+    g.appendChild(fr);g.appendChild(lb);w.appendChild(g);
+  });
+
+  const np=document.createElement('div');np.className='npc';np.id='npc';np.style.left='28px';
+  np.innerHTML='<div class="nhead">👩‍⚕️</div><div class="nbody"></div>';
+  w.appendChild(np);
+
+  const ch=document.createElement('div');ch.className='char';ch.id='ch';ch.style.left='28px';
+  ch.innerHTML='<div class="head">🧑‍⚕️</div><div class="body"></div>';
+  w.appendChild(ch);
+
+  for(let x=0;x<CW;x+=70){
+    const t=document.createElement('div');
+    t.style.cssText=`position:absolute;left:${x}px;top:18px;width:68px;height:34px;border:1px solid rgba(0,0,0,.04);`;
+    f.appendChild(t);
+  }
+}
+function walkTo(tx,cb){
+  const ch=document.getElementById('ch');
+  ch.classList.add('walking');ch.style.left=tx+'px';
+  const vp=document.getElementById('vp');
+  vp.scrollTo({left:Math.max(0,tx-vp.clientWidth/2),behavior:'smooth'});
+  setTimeout(()=>{ch.classList.remove('walking');if(cb)cb();},700);
 }
 </script>
 </body>
